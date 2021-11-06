@@ -12,6 +12,8 @@ use ZipArchive;
 
 class TournamentController extends Controller
 {
+
+    private $invalidTournamentError = "Invalid tournament selected";
     /**
      * Display a listing of the resource.
      *
@@ -94,7 +96,7 @@ class TournamentController extends Controller
         if (isset($tournament)) {
             return view("tournament.edit", compact("tournament"));
         }
-        throw ValidationException::withMessages(["organizationName" => ["Invalid tournament selected"]]);
+        throw ValidationException::withMessages(["organizationName" => [$this->invalidTournamentError]]);
     }
 
     /**
@@ -111,7 +113,7 @@ class TournamentController extends Controller
             $validated = $request->validated();
             $tournament =  Tournament::find($id);
             if (!isset($tournament)) {
-                throw ValidationException::withMessages(["organizationName" => ["Invalid tournament selected"]]);
+                throw ValidationException::withMessages(["organizationName" => [$this->invalidTournamentError]]);
             }
             $uploadImageNames = null;
             if ($request->hasfile('organizationLogo')) {
@@ -151,7 +153,7 @@ class TournamentController extends Controller
             $tournament->delete();
             return redirect()->route("dashboard");
         }
-        throw ValidationException::withMessages(["organizationName" => ["Invalid tournament selected"]]);
+        throw ValidationException::withMessages(["organizationName" => [$this->invalidTournamentError]]);
     }
     /**
      * Download the specified resource from storage.
@@ -165,7 +167,7 @@ class TournamentController extends Controller
         try {
             $tournament = Tournament::find($id);
             if (!isset($tournament)) {
-                throw new \Exception("Invalid tournament selected");
+                throw new \Exception($this->invalidTournamentError);
             }
             $cssFile = file_get_contents(storage_path("template/index.css"));
             $templateFile = file_get_contents(storage_path("template/index.html"));
