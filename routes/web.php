@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\TournamentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,8 +18,14 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth'])->name('dashboard');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [TournamentController::class, 'index'])->name('dashboard');
+    Route::get('/tournament', [TournamentController::class, 'create'])->name('tournament.create');
+    Route::post('/tournament', [TournamentController::class, 'store'])->name('tournament.store');
+    Route::get('/tournament/{id}', [TournamentController::class, 'edit'])->name('tournament.edit');
+    Route::get('/tournament/delete/{id}', [TournamentController::class, 'destroy'])->name('tournament.delete');
+    Route::post('/tournament/{id}', [TournamentController::class, 'update'])->name('tournament.update');
+    Route::get('/tournament/download/{id}', [TournamentController::class, 'download'])->name('tournament.download');
+});
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
