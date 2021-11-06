@@ -13,7 +13,7 @@
                                         role="button"> New </a>
                                 </div>
                                 @if ($errors->any())
-                                    <div class="col-md-12 mt-2 mt-2">
+                                    <div class="col-md-12 mt-2">
                                         <div class="alert alert-danger">
                                             <ul>
                                                 @foreach ($errors->all() as $error)
