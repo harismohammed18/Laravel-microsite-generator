@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTournamentRequest;
 use App\Http\Requests\UpdateTournamentRequest;
 use App\Models\Tournament;
-use Illuminate\Http\File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use ZipArchive;
 
 class TournamentController extends Controller
 {
@@ -166,10 +166,39 @@ class TournamentController extends Controller
     {
         try {
             $tournament = Tournament::find($id);
-            if (isset($tournament)) {
-                Storage::disk('local')->put('example.txt', 'Contents');
+            if (!isset($tournament)) {
+                throw new \Exception("Invalid tournament selected");
             }
-            throw ValidationException::withMessages(["organizationName" => ["Invalid tournament selected"]]);
+            $cssFile = file_get_contents(storage_path("template/index.css"));
+            $templateFile = file_get_contents(storage_path("template/index.html"));
+
+
+            // replace css prefix
+            $cssPrefix = ["/{{primary_color}}/", "/{{secondary_color}}/"];
+            $cssValues = [$tournament->primary_color,  $tournament->secondary_color];
+            $updatedCssFile = tmpfile();
+            fwrite($updatedCssFile, preg_replace($cssPrefix, $cssValues, $cssFile));
+
+            // replace html file
+            $cssPrefix = ["/{{title}}/", "/{{image_path}}/", "/{{tournament_name}}/", "/{{org_name}}/"];
+            $cssValues = [$tournament->name, $tournament->org_logo, $tournament->name, $tournament->org_name];
+            $updatedTemplateFile = tmpfile();
+            fwrite($updatedTemplateFile, preg_replace($cssPrefix, $cssValues, $templateFile));
+
+
+            // create zip file
+            $zip = new ZipArchive();
+            $tempFileUri = public_path() . "/" . $tournament->id . "-" . $tournament->name . ".zip";
+            if ($zip->open($tempFileUri, ZipArchive::CREATE) === TRUE) {
+                $zip->addFile(stream_get_meta_data($updatedTemplateFile)['uri'], "index.html");
+                $zip->addFile(stream_get_meta_data($updatedCssFile)['uri'], "index.css");
+                $zip->addFile(public_path("uploads/" . $tournament->org_logo), $tournament->org_logo);
+            }
+            $zip->close();
+
+            fclose($updatedTemplateFile);
+            fclose($updatedCssFile);
+            return response()->download($tempFileUri);
         } catch (\Throwable $th) {
             throw ValidationException::withMessages(["organizationName" => [$th->getMessage()]]);
         }
